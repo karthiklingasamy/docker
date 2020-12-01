@@ -29,7 +29,7 @@ process running on ubuntu. If you really want to run ubuntu for a while run the 
 
 Exec - execute a command
 ------------------------
-> docker run <containetname>/<containerid> cat /etc/hosts (attach mode)
+> docker exec run <containetname>/<containerid> cat /etc/hosts (attach mode)
 
 Run - attach and detach
 ---------------------------
