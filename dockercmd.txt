@@ -1,0 +1,49 @@
+what is containers Containers?
+
+Containers are completely isolated environment. They have their own 
+ 1. Processes/services
+ 2. Network
+ 3. Mounts
+
+Running instance of image
+
+
+
+> docker version
+> docker run nginx
+> docker ps (list container)
+> docker ps -a 
+> docker stop <container Name>/<container ID>
+> docker rm <container Name>/<container ID> (To remove the unwanted container to gain space)
+> docker images (list images)
+> docker rmi nginx (remove image. use must stop all the dependent container before remove images)
+> docker pull nginx (Only pull the image and not run the conatiner)
+
+Unlike Virtual machines containers are not ment to host virtual system. Containers are ment to run specific task or process
+such to host the instance of the application server or database or some kind on computation or analysis task. Once the task is 
+completed the container exits. Container only live as long as the process inside it alive. For example the web server inside the
+container crashed the container will exits. Thats the reasion when you run a container on ubuntu exits immediatly. Bcz there is no
+process running on ubuntu. If you really want to run ubuntu for a while run the below command
+
+> docker run ubuntu sleep 5
+
+Exec - execute a command
+------------------------
+> docker run <containetname>/<containerid> cat /etc/hosts (attach mode)
+
+Run - attach and detach
+---------------------------
+> docker run kodelloud/simple-wenapp
+It is running the container on attached mode or fourground. Meaning you will attached to the console or the standard output of the docker container
+and you will see the output of the web services screen. you wont be able to do anything on this console untill the docket container stops.
+It wont respon to you inputs. Press CTRL + C to stop the container and the application hosted on the container exits and get back to your prompt
+
+> docker run -d <containetname>/<containerid> cat /etc/hosts (detach mode)
+
+Now as soon as you execute the above command you will get the prompt immedialty. The container will continue to run in the background
+
+> docker attach a043d (if you want to attach back to the running container later run this command)
+
+
+
+
