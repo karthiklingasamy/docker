@@ -107,6 +107,15 @@ Exercies run container Attach and Detach Mode
 > docker run timer
 > docker attach <containername>/<containerid>
 
+http://www.gtlib.gatech.edu/pub/apache/jmeter/binaries/apache-jmeter-5.3.tgz
+
+FROM ubuntu
+RUN apt-get update
+RUN apt-get install openjdk-8-jdk
+RUN apt-get install wget
+RUN wget http://www.gtlib.gatech.edu/pub/apache/jmeter/binaries/apache-jmeter-5.3.tgz
+
+
 
 
 
