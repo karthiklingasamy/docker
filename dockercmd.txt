@@ -11,13 +11,15 @@ Running instance of image
 
 > docker version
 > docker run nginx
-> docker ps (list container)
-> docker ps -a 
+> docker ps (list running container)
+> docker ps -a (To see all the containers that exited)
 > docker stop <container Name>/<container ID>
 > docker rm <container Name>/<container ID> (To remove the unwanted container to gain space)
 > docker images (list images)
 > docker rmi nginx (remove image. use must stop all the dependent container before remove images)
 > docker pull nginx (Only pull the image and not run the conatiner)
+> docker run mmumshad/ansible-playable (if you are using your own images the run the below command start with your userid/image)
+> docker run -d centos sleep 20
 
 Unlike Virtual machines containers are not ment to host virtual system. Containers are ment to run specific task or process
 such to host the instance of the application server or database or some kind on computation or analysis task. Once the task is 
@@ -29,7 +31,7 @@ process running on ubuntu. If you really want to run ubuntu for a while run the 
 
 Exec - execute a command
 ------------------------
-> docker exec run <containetname>/<containerid> cat /etc/hosts (attach mode)
+> docker exec <containetname>/<containerid> cat /etc/hosts (attach mode)
 
 Run - attach and detach
 ---------------------------
@@ -42,7 +44,89 @@ It wont respon to you inputs. Press CTRL + C to stop the container and the appli
 
 Now as soon as you execute the above command you will get the prompt immedialty. The container will continue to run in the background
 
-> docker attach a043d (if you want to attach back to the running container later run this command)
+> docker attach a043d (if you want to attach back to the running container later run this command. Now it comes to fourground and if you press CTRL+C you cant get any prompt)
+
+Run -tag
+-------------
+> docker run redis:4.0 (If you dont specify any tag docker will assume the tag is latest version of the software)
+
+Run-STDIN
+---------------
+> docker run -it kodekloud/simple-prompt-docker
+
+Run - PORT mapping
+----------------------
+docker run kodekloud/webapp
+ *Running on http//0.0.0.0:5000/(Press CTRL+C to quit)
+
+1. Docker host have its own IP. Which is (IP: 192.168.1.5)
+2. Every docker container has it's own IP. Called Internal IP (Web App Docker Container,IP:172.17.0.2, Port:5000) which is only accessable within the host.
+   So if you open the browser within the docker host and type http://172.17.0.2:5000(Internal IP). Since this is internal IP users outside the host can not access 
+   the IP. For this scenario we could use dockek host IP which is 192.168.1.5. But for that to work you must have map the port inside the docker container to free port on
+   docker host. 
+    For Example: 
+    If a user want to access my application using port 80. 
+    Map the port 80 of the localhost/dockerhost to port 5000 on the docker container using -p parameter in the run command
+    Now all traffic of port 80 on my dockerhost will redirected to port 5000 on container
+
+> docker run -p 80:5000 kodekloud/simple-webapp (webapp Instans1)
+> docker run -p 8000:5000 kodekloud/simple-webapp (webapp Instans2)
+> docker run -p 8001:5000 kodekloud/simple-webapp (webapp Instans3)
+
+> docker run -p 3306:3306 mysql(DB Instans1)
+> docker run -p 8306:3306 mysql(DB Instans2)
+> docker run -p 8307:3306 mysql(DB Instans3)
+
+ Note: You can not map to the same port on docker host more than once
+
+
+3. How user access the application host on container?
+
+Run - Volume mapping
+---------------------------
+
+> docker run -v /opt/datadir:/var/lib/mysql mysql
+
+Inspect Container
+---------------------
+> docker inspect <containername>/<containerID>
+
+Container Logs
+---------------
+> docker logs <containername>/<containerID>
+
+
+Exercies run container Attach and Detach Mode
+-------------------------------------------------
+> docker run ubuntu sleep 1500
+1. Option 1: Now you will not get the prompt bcz the container is running fourground. You can open new terminial and run docker ps -a cmd and 
+   get the container ID . Now you can stop the container
+2. Optipn 2: Run the command "docker attach <containerName>/<ContainerID>"
+
+
+> docker run timer
+> docker attach <containername>/<containerid>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
