@@ -117,6 +117,278 @@ RUN wget http://www.gtlib.gatech.edu/pub/apache/jmeter/binaries/apache-jmeter-5.
 
 
 
+docker run --links
+--------------------
+
+docker run -d --name=redis redis
+docker run -d --name=db postgres
+docker run -d --name=vote -p 5000:80 --link redis:redis voting-app
+docker run -d --name=result -p 5001:80 --link db:db result-app
+docker run -d --name=worker --link db:db --link redis:redis worker
+
+Links is a command line option is used to connect two containers
+
+1. The voting app depens on redis services. When the web server starts it is looking for redis services running on host redis
+2. But the voting app container can not resolv the host by the name redis. To make the voting app aware of the redis services 
+   we add a link option while running the voting app container to link it to the redis container
+   > docker run -d --name=vote -p 5000:80 --link redis:redis voring -app
+     1. specify the name of the redis container (--link redis)
+     2. specify the name of the host that the voting app is looking for which is also redis in this case (--link redis:redis)
+     3. It create an entry on etc host file on the voting app container adding an entry with hostname redis with the internal ip of the redis container
+     NOTE: This method is outdated. we have advance feature called docker swarm and networking support better way to achiving this insted of using links
+
+Docker Composefile.yaml (from docker command)
+redis:
+ image:redis
+
+db:
+ image:postgres:9.4
+ 
+vote:
+ image:voting-app (build: ./vote)
+ ports:
+    - 5000:80
+ links:
+    -redis
+
+ 
+
+result:
+ image:result (build: ./result)
+ ports:
+    - 5001:80
+ links:
+    - db
+
+worker:
+ image:worker (build:./worker)
+ links:
+   - db
+   - redis
+
+Docker Compose - Version
+-------------------------
+version 1: The limitation in version 1. If to want to deploy containers on differenr network other than default bridge network there was no way of specify in this file
+           Aslo if you want to specify the order of services to startup (for example database should start fist) is not possable in version 1
+
+Version 2: The format of the file also change little bit. Nolonger need to specify the stack informatiom as you did in version 1. It is all encaputulated in services 
+            section. 
+
+Version 3: Support docker swarm
+
+
+Docker Run--->Docker Compose---->Docker Swarm
+
+Docker Compse
+-----------------
+1. Install Docker Compose
+2. Create Docker Compose yaml file
+
+Docker Private Registry
+---------------------------
+To be updated
+
+Docker Engine
+-----------------
+Docker Engine is simply refer to the host on which docker is installed
+
+Docker Engin have 3 component
+1. Docker CLI
+2. REST API
+3. Docker Deamon
+
+To execute docker CLI command from laptop to remote host run the below command
+> docker -H=remote-docker-engine:2375
+
+Containerzation
+-----------------
+How does it work under the hood?
+Docker users namespace to isolate workspace 
+ * Process ID
+ * Network
+ * InterProcess Communication
+ * Mount
+ * UnixTimesharing
+
+Each container has their own namespace (Process ID, Network, Interprocess Communication,Mount,Unixtimesharing) there by providing isolation between containers
+
+How to see the process ID of same services running on host and container?
+He is not explained this concept. But i need to revisit this slide to get more detail
+
+cgroups
+-----------
+How to set limits for each container to use CPU and Memory?
+> docker run --cpus=.5 ubuntu (Limits the container not to use more than 50%)
+> docker run --memory=100m ubuntu (limit the container not to use more than 100m)
+
+Namespace-PID
+-----------------
+> docker exec  5a5f6gh ps -eaf (to see the process id of tomcat running on container. Example PID=1)
+> ps -eaf|greap docker-java-home (to see the process id of tocat running on host.Example PID=2700)
+
+So containeraziaon is the technology allow these process to be isolated and run container using namespaces
+
+
+Docker Storage
+------------------
+
+Let us see how the docker store data on local file system. When you install docker on local system
+It create file system as below
+> /var/lib/docker
+  auft(folder)
+  containers(folder-All files related to container is stored under containers folder)
+  images(folder - All files related to images is stored under images folder)
+  volumes(folder - All files related to volumes is sored under volumes folder)
+
+Layered Architecture
+-------------------------
+Each line of instruction in the docker file created a new layer in the docker image(jsut the chages from the previous layer)
+
+Dockerfile                                                              Dockerfile2
+FROM Ubuntu 								FROM Ubuntu
+RUN apt-get update && apt-get -y install python                         RUN apt-get update && apt-get -y install python
+RUN pip install flask flask-mysql                                       RUN pip install flask flask-mysql
+COPY . /opt/source-code                                                 COPY app2.py /opt/source-code
+ENTRYPOINT FLASK_APP=/opt/source-code/app.py flask run                  ENTRYPOINT FLASK_APP=/opt/source-code/app2.py flask run
+
+docker build Dockerfile -t mumshad/my-custom-app                        docker build Dockerfile -t mumshad/my-custom-app-2
+
+Layer 1. Base Ubuntu Layer       (120MB)                                Layer 1. ******************************
+Layer 2. Changes in apt packages (306MB)                                Layer 2. ******************************
+Layer 3. Changes in pip packages (6.3MB)                                Layer 3. ******************************
+Layer 4. Source Code             (229 B)                                Layer 4. Source Code
+Layer 5. Update Entrypoint       (0   B)                                Layer 5. Update Entrypoinr
+
+Since the first 3 layers of the both the application are same docker is not going to build the first three layers.
+Instead it reuse the first three layes from the cache and only create the last two layes with the new source
+and the new entrypoint. This way docker build image fast and effeciently same the disk space. 
+This is also applicable to if you update your source code. Whenever you update you application code such as app.py
+docker simply reuse all the previous layes from the cache and quickly rebuild the images by updating the latest
+source code. Thus saving lot of time during rebuild images
+
+Image Layer -> ReadOnly
+Container Layer -> Read Write
+
+Volume Mounting & Bind Mounting
+-----------------------------------
+Volume Mount - Mount a volumes from the volumes directory 
+Bind Mount - Mount a directory from any location on the docker host
+
+
+Docker Volumes (Volume Mounting)
+---------------------------------
+All the files and folders gets deleted once to remove the container
+What if you want to presist the data?
+> docker volume create data_volume
+> /var/lib/docker
+  >volumes
+    >data_volume
+
+> docker run -v data_volume:/var/lib/mysql mysql
+
+This will create a new container and mount data volume (data_volume) we create into var/lib/mysql folder inside the container
+So all data return by the database is stored on volume created on the docker host. Even if the container is destroyed the 
+data is still active
+
+What if you did not run docker volume create command to create the volum before the docker run command?
+> docker run -v data_volume2:/var/lib/mysql mysql
+
+Docker automatically create a volume (data_volume2) and automatically mount to the container
+
+Bind Mounting
+-------------
+What if our data is already on another location. Forexample we have an external storage on the docker host @/data and we 
+would like to stote database data on that volume and not on the default /var/lib/docker/volumes?
+> docker run -v data/mysql :/var/lib/mysql mysql (This already i know :) )
+
+Run the below command is the most preffered way and it is more verbose
+
+> docker run --mount type=bind,source=/data/mysql,target=/var/lib/mysql mysql
+
+
+Storage Drivers (Perform Creat the layer, Maintain the layer files related to each layer)
+-----------------
+1. AUFS
+2. ZFS
+3. BRRFS
+4. Device Mapper
+5. Overlay
+6. Overlay2
+
+> docker info (display info abut storage layer)
+
+Storage/FileSystem Demo
+-------------------------
+When docker is installed it automatically create the below default structure
+>ls -l /var/lib/docker
+
+1.  aufs
+2.  builder
+3.  containers
+4.  images
+5.  network
+6.  plugins
+7.  swarm
+8.  tmp
+9.  trust
+10. volumes
+
+> docker history <imageID> (Very very important cmd used to see how the image was build)
+> var/lib/docker/aufs/diff/aa6dc (Kind of hack)
+
+Docker Disk Usage
+-------------------
+It shows you disk usage by Images,Containers and Volumes
+> docker system df
+
+> docker system df -v (Breakdown by images)
+
+
+Docker Container Orchestration
+----------------------------------
+
+> docker service create --replicas=100 nodejs
+
+1. docker swarm
+2. kubernates
+3. MESOS
+
+docker swarm
+---------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+     
+
+
+
+
 
 
 
